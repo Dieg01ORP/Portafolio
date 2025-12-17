@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Portfolio — Diego Gutierrez</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+
+<body data-theme="dark">
+  <div class="wrap">
+    <aside class="panel">
+      <div class="logo">
+        <img class="avatar" src="https://avatars.githubusercontent.com/u/133284572?v=4" alt="Avatar GitHub">
+        <div>
+          <h2>Diego Gutierrez</h2>
+          <p class="lead">Desarrollador · Sistemas web · Experimentos UX</p>
+        </div>
+      </div>
+
+      <div class="meta">
+        <div class="item">
+          <small>Repos subidos</small>
+          <strong id="repoCount">—</strong>
+        </div>
+        <div class="item"><small>Ubicación</small><span>Lima, Perú</span></div>
+        <div class="item"><small>Stack</small><span>PHP · JS · Abap · Python</span></div>
+      </div>
+
+      <div class="ctas">
+        <a href="https://github.com/Dieg01ORP" target="_blank" class="btn"
+          style="text-decoration:none;display:inline-flex;align-items:center;justify-content:center">
+          Ver perfil
+        </a>
+        <button class="btn ghost" onclick="connectGithub()">Conectar GitHub</button>
+      </div>
+
+      <div style="margin-top:18px;color:var(--muted);font-size:13px">
+        <p style="margin:6px 0 0">Seleccionar en <strong>Conectar GitHub</strong> para ver los repositorios</p>
+      </div>
+    </aside>
+
+    <section class="projects">
+      <div class="toolbar">
+        <div class="search">
+          <input id="searchInput" placeholder="Buscar proyecto..." oninput="applyFilters()" />
+        </div>
+        <div class="filters" id="filters">
+          <div class="chip active" data-filter="all" onclick="setFilter(event)">Todos</div>
+          <div class="chip" data-filter="html" onclick="setFilter(event)">HTML</div>
+          <div class="chip" data-filter="php" onclick="setFilter(event)">PHP</div>
+          <div class="chip" data-filter="python" onclick="setFilter(event)">Python</div>
+          <div class="chip" data-filter="abap" onclick="setFilter(event)">Abap</div>
+        </div>
+      </div>
+
+      <!-- Skeleton -->
+      <div id="skeleton" class="grid">
+        <div class="card">
+          <div class="edge"></div>
+          <p>Cargando repositorios...</p>
+        </div>
+        <div class="card">
+          <div class="edge"></div>
+          <p>Cargando repositorios...</p>
+        </div>
+        <div class="card">
+          <div class="edge"></div>
+          <p>Cargando repositorios...</p>
+        </div>
+      </div>
+
+      <!-- Grid real -->
+      <div class="grid" id="repoGrid" style="display:none"></div>
+    </section>
+
+  </div>
+
+  <!-- Floating theme switcher -->
+  <div class="theme-toggle" role="toolbar" aria-label="Selector de tema">
+    <button id="btnDark" title="Dark" class="active" onclick="setTheme('dark')">🌙</button>
+    <button id="btnLight" title="Light" onclick="setTheme('light')">☀️</button>
+  </div>
+
+  <script>
+    /* =========================
+       THEME LOGIC
+    ========================== */
+    const root = document.body;
+
+    function setTheme(t) {
+      root.dataset.theme = t;
+      document.getElementById('btnDark').classList.toggle('active', t === 'dark');
+      document.getElementById('btnLight').classList.toggle('active', t === 'light');
+    }
+
+    const preferred =
+      window.matchMedia &&
+        window.matchMedia('(prefers-color-scheme:light)').matches
+        ? 'light'
+        : 'dark';
+
+    setTheme(preferred);
+
+    /* =========================
+       FILTERS & SEARCH
+    ========================== */
+    let currentFilter = 'all';
+
+    function setFilter(e) {
+      const node = e.currentTarget || e.target;
+      document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+      node.classList.add('active');
+      currentFilter = node.dataset.filter;
+      applyFilters();
+    }
+
+    function applyFilters() {
+      const q = document.getElementById('searchInput').value.toLowerCase();
+      document.querySelectorAll('#repoGrid .card').forEach(card => {
+        const tags = card.dataset.tags || '';
+        const title = card.querySelector('h3').innerText.toLowerCase();
+        const text = (card.querySelector('p')?.innerText || '').toLowerCase();
+
+        const matchesFilter =
+          currentFilter === 'all' || tags.split(' ').includes(currentFilter);
+        const matchesSearch =
+          q === '' || title.includes(q) || text.includes(q);
+
+        card.style.display = matchesFilter && matchesSearch ? 'block' : 'none';
+      });
+    }
+
+    /* =========================
+       GITHUB CONFIG
+    ========================== */
+    const GITHUB_USER = 'Dieg01ORP';
+    const FEATURED = ['sistema-administrativo', 'generador-qr'];
+
+    /* =========================
+       LOAD GITHUB STATS (Repos)
+    ========================== */
+    async function loadGithubStats() {
+      try {
+        const res = await fetch(`https://api.github.com/users/${GITHUB_USER}`);
+        const data = await res.json();
+
+        if (data.public_repos !== undefined) {
+          const repoCount = document.getElementById('repoCount');
+          if (repoCount) repoCount.innerText = data.public_repos;
+        }
+      } catch (err) {
+        console.error('Error cargando stats de GitHub', err);
+      }
+    }
+
+    /* =========================
+       LOAD REPOSITORIES
+    ========================== */
+    async function connectGithub() {
+      const skeleton = document.getElementById('skeleton');
+      const grid = document.getElementById('repoGrid');
+
+      if (!skeleton || !grid) {
+        console.error('Skeleton o Grid no encontrados');
+        return;
+      }
+
+      skeleton.style.display = 'grid';
+      grid.style.display = 'none';
+      grid.innerHTML = '';
+
+      try {
+        const res = await fetch(
+          `https://api.github.com/users/${GITHUB_USER}/repos`
+        );
+        const repos = await res.json();
+
+        repos
+          .filter(r => !r.fork)
+          .sort(
+            (a, b) => new Date(b.updated_at) - new Date(a.updated_at)
+          )
+          .forEach(repo => {
+            const card = document.createElement('article');
+            card.className = 'card';
+            card.dataset.tags = (repo.language || '').toLowerCase();
+
+            card.innerHTML = `
+            <div class="edge"></div>
+            <h3>${repo.name}${FEATURED.includes(repo.name) ? ' ⭐' : ''}</h3>
+            <p>${repo.description || 'Repositorio sin descripción.'}</p>
+            <div class="meta-bottom">
+              <span class="tag">${repo.language || 'N/A'}</span>
+              <span class="tag">⭐ ${repo.stargazers_count}</span>
+              <span class="tag">🍴 ${repo.forks_count}</span>
+            </div>
+            <button class="btn ghost" style="margin-top:10px"
+              onclick="window.open('${repo.html_url}','_blank')">
+              Ver en GitHub
+            </button>
+          `;
+
+            grid.appendChild(card);
+          });
+
+      } catch (e) {
+        grid.innerHTML = '<p>Error cargando repositorios</p>';
+        console.error(e);
+      }
+
+      skeleton.style.display = 'none';
+      grid.style.display = 'grid';
+    }
+
+    /* =========================
+       INIT
+    ========================== */
+    loadGithubStats();
+  </script>
+
+</body>
+
+</html>
