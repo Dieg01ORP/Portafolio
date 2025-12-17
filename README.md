@@ -5,7 +5,7 @@ Este es mi portafolio personal donde presento algunos de mis proyectos y reposit
 La web consume la **API pública de GitHub** para mostrar mis repositorios de forma dinámica y siempre actualizada.
 
 ## 🌐 Demo
-👉 https://dieg01orp.github.io/Portafolio_Diego/
+👉 https://dieg01orp.github.io/Portafolio/
 
 ## 🚀 Características
 - Diseño moderno y minimalista
